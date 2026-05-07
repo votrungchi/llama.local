@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  qwen3-agent:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda13
+    container_name: qwen3-agent
+    # The 'runtime: nvidia' is often redundant if you use the deploy block below
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: >
+      --host 0.0.0.0
+      --port 8080
+      --model /models/Qwen3-Coder-Next-UD-Q4_K_XL.gguf
+      --no-mmap
+      --mlock
+      --parallel 1
+      --n-gpu-layers 999
+      --n-cpu-moe 38
+      --cache-ram 0
+      --cache-type-k q4_0
+      --cache-type-v q4_0
+      --ctx-size 32768
+    volumes:
+      - ./models:/models:Z
+    ports:
+      - "8080:8080"
+    cap_add:
+      - IPC_LOCK
+
+  qwen2-completion:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda13
+    container_name: qwen2-completion
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: >
+      --host 0.0.0.0
+      --port 8080
+      --model /models/qwen2.5-coder-7b-instruct-q5_k_m.gguf
+      --no-mmap
+      --mlock
+      --parallel 1
+      --n-gpu-layers 999
+      --ctx-size 4096
+      --n-predict 64
+      --cache-ram 0
+      --cache-type-k q4_0
+      --cache-type-v q4_0
+    volumes:
+      - ./models:/models:Z
+    ports:
+      - "8081:8080"
+    cap_add:
+      - IPC_LOCK
